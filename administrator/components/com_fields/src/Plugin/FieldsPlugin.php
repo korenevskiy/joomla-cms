@@ -80,7 +80,7 @@ abstract class FieldsPlugin extends CMSPlugin
 			}
 
 			// Needed attributes
-			$data['type'] = $layout;
+			$data['type'] = $this->_name == $layout ? $layout : $this->_name.':'.$layout;
 
 			if ($this->app->getLanguage()->hasKey('PLG_FIELDS_' . $key . '_LABEL'))
 			{
@@ -146,7 +146,7 @@ abstract class FieldsPlugin extends CMSPlugin
 		$fieldParams->merge($field->fieldparams);
 
 		// Get the path for the layout file
-		$path = PluginHelper::getLayoutPath('fields', $this->_name, $field->type);
+		$path = PluginHelper::getLayoutPath('fields', $this->_name, $field->params->get('layout', $field->type));
 
 		// Render the layout
 		ob_start();
@@ -315,7 +315,7 @@ abstract class FieldsPlugin extends CMSPlugin
 	{
 		foreach ($this->onCustomFieldsGetTypes() as $typeSpecification)
 		{
-			if ($type == $typeSpecification['type'])
+			if ($type == $typeSpecification['type'] || strpos($typeSpecification['type'], $type.':', 0) === 0)
 			{
 				return true;
 			}
