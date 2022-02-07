@@ -77,10 +77,11 @@ class FieldLayoutField extends FormField
 			}
 
 			// Add layout files Options
-			$fieldName = str_replace('.php', '', $this->form->getValue('type'));
+			$fieldName = $this->form->getValue('type');
 
 			foreach (Folder::files(JPATH_PLUGINS . "/fields/$fieldName/tmpl", '.php') as $layout)
 			{
+				$layout = str_replace('.php', '', $layout);
 				$items[] = HTMLHelper::_('select.option', $fieldName . ':' . $layout, Text::alt($layout, $fieldName));
 			}
 
