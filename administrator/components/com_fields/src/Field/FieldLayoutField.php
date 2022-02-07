@@ -73,7 +73,16 @@ class FieldLayoutField extends FormField
 			$groups = array();
 
 			// Add "Use Default"
-			$groups[]['items'][] = HTMLHelper::_('select.option', '', Text::_('JOPTION_USE_DEFAULT'));
+			$items = array();
+			$items[] = HTMLHelper::_('select.option', '', Text::_('JOPTION_USE_DEFAULT'));
+
+			// Add Custom Options
+			foreach (parent::getOptions() as $option)
+			{
+				$items[] = HTMLHelper::_('select.option', $option->value, $option->text);
+			}
+
+			$groups[]['items'] = $items;
 
 			// Add the layout options from the component path.
 			if (is_dir($component_path) && ($component_layouts = Folder::files($component_path, '^[^_]*\.php$', false, true)))
