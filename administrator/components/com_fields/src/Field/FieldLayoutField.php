@@ -77,7 +77,7 @@ class FieldLayoutField extends FormField
 			}
 
 			// Add layout files Options
-			$fieldName = $this->form->getValue('type');
+			$fieldName = str_replace('.php', '', $this->form->getValue('type'));
 
 			foreach (Folder::files(JPATH_PLUGINS . "/fields/$fieldName/tmpl", '.php') as $layout)
 			{
