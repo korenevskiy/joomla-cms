@@ -63,12 +63,6 @@ class FieldLayoutField extends FormField
 			$db->setQuery($query);
 			$templates = $db->loadObjectList('element');
 
-			// Build the search paths for component layouts.
-			$component_path = Path::clean(JPATH_SITE . '/components/' . $extension . '/layouts/field');
-
-			// Prepare array of component layouts
-			$component_layouts = array();
-
 			// Prepare the grouped list
 			$groups = array();
 
@@ -82,7 +76,21 @@ class FieldLayoutField extends FormField
 				$items[] = HTMLHelper::_('select.option', $option->value, $option->text);
 			}
 
+			// Add layout files Options
+			$fieldName = $this->form->getValue('type');
+
+			foreach (Folder::files(JPATH_PLUGINS . "/fields/$fieldName/tmpl", '.php') as $layout)
+			{
+				$items[] = HTMLHelper::_('select.option', $fieldName . ':' . $layout, Text::alt($layout, $fieldName));
+			}
+
 			$groups[]['items'] = $items;
+
+			// Prepare array of component layouts
+			$component_layouts = array();
+
+			// Build the search paths for component layouts.
+			$component_path = Path::clean(JPATH_SITE . '/components/' . $extension . '/layouts/field');
 
 			// Add the layout options from the component path.
 			if (is_dir($component_path) && ($component_layouts = Folder::files($component_path, '^[^_]*\.php$', false, true)))
