@@ -85,7 +85,9 @@ class FieldLayoutField extends FormField
 				$items[] = HTMLHelper::_('select.option', $fieldName . ':' . $layout, Text::alt($layout, $fieldName));
 			}
 
-			$groups[]['items'] = $items;
+			$groups['sys']['id'] = $this->id . '_sys';
+			$groups['sys']['text'] = Text::sprintf('JOPTION_FROM_STANDARD');
+			$groups['sys']['items'] = $items;
 
 			// Prepare array of component layouts
 			$component_layouts = array();
