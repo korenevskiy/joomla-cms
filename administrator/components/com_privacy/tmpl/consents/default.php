@@ -16,9 +16,11 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
 
-/** @var PrivacyViewConsent $this */
+/** @var \Joomla\Component\Privacy\Administrator\View\Consents\HtmlView $this */
 
-HTMLHelper::_('behavior.multiselect');
+/** @var Joomla\CMS\WebAsset\WebAssetManager $wa */
+$wa = $this->document->getWebAssetManager();
+$wa->useScript('multiselect');
 
 $user       = Factory::getUser();
 $listOrder  = $this->escape($this->state->get('list.ordering'));
