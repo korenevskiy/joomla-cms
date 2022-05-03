@@ -51,7 +51,7 @@ extract($displayData);
  * @var   string   $addonAfter      The text to use in a bootstrap input group append
  */
 
-if(is_scalar($value) == false && method_exists($value, '__toString') == false)
+if(is_scalar($value) == false && method_exists((object)$value, '__toString') == false)
 {
 	$value = "Error field '$name':" .gettype($value);
 }
