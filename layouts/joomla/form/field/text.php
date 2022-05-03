@@ -51,6 +51,11 @@ extract($displayData);
  * @var   string   $addonAfter      The text to use in a bootstrap input group append
  */
 
+if(is_scalar($value) == false && method_exists($value, '__toString') == false)
+{
+	$value = "Error field '$name':" .gettype($value);
+}
+
 $list = '';
 
 if ($options)
@@ -96,7 +101,7 @@ $addonAfterHtml  = '<span class="input-group-text">' . Text::_($addonAfter) . '<
 		type="text"
 		name="<?php echo $name; ?>"
 		id="<?php echo $id; ?>"
-		value="<?php echo htmlspecialchars($value, ENT_COMPAT, 'UTF-8'); ?>"
+		value="<?php echo htmlspecialchars((string)$value, ENT_COMPAT, 'UTF-8'); ?>"
 		<?php echo $dirname; ?>
 		<?php echo implode(' ', $attributes); ?>>
 
