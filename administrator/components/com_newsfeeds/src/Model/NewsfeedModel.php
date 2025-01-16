@@ -271,7 +271,7 @@ class NewsfeedModel extends AdminModel
         }
 
         if (!empty($item->id)) {
-            $item->tags = new  TagsHelper();
+            $item->tags = new TagsHelper();
             $item->tags->getTagIds($item->id, 'com_newsfeeds.newsfeed');
 
             // @todo: We probably don't need this in any client - but needs careful validation
@@ -305,6 +305,7 @@ class NewsfeedModel extends AdminModel
         if (empty($table->id)) {
             // Set the values
             $table->created = $date->toSql();
+            $table->version = 1;
 
             // Set ordering to the last item if not set
             if (empty($table->ordering)) {
@@ -320,11 +321,9 @@ class NewsfeedModel extends AdminModel
         } else {
             // Set the values
             $table->modified    = $date->toSql();
-            $table->modified_by = $user->get('id');
+            $table->modified_by = $user->id;
+            $table->version++;
         }
-
-        // Increment the content version number.
-        $table->version++;
     }
 
     /**
@@ -370,7 +369,7 @@ class NewsfeedModel extends AdminModel
      * @param   array   $data   The data to be injected into the form
      * @param   string  $group  The plugin group to process
      *
-     * @return  array  An array of conditions to add to ordering queries.
+     * @return  void
      *
      * @since   1.6
      */
@@ -387,7 +386,7 @@ class NewsfeedModel extends AdminModel
         if (Associations::isEnabled()) {
             $languages = LanguageHelper::getContentLanguages(false, false, null, 'ordering', 'asc');
 
-            if (count($languages) > 1) {
+            if (\count($languages) > 1) {
                 $addform = new \SimpleXMLElement('<form />');
                 $fields  = $addform->addChild('fields');
                 $fields->addAttribute('name', 'associations');

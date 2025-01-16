@@ -14,7 +14,7 @@ use Joomla\CMS\Tree\NodeTrait;
 use Joomla\Registry\Registry;
 
 // phpcs:disable PSR1.Files.SideEffects
-\defined('JPATH_PLATFORM') or die;
+\defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
 /**
@@ -81,7 +81,7 @@ class MenuItem implements NodeInterface
      * @var    string
      * @since  3.7.0
      */
-    public $link;
+    public $link = '';
 
     /**
      * The type of link

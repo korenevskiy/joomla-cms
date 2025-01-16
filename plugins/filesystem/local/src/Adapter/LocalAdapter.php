@@ -14,7 +14,6 @@ use Joomla\CMS\Date\Date;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Filesystem\File;
 use Joomla\CMS\Filesystem\Folder;
-use Joomla\CMS\Filesystem\Path;
 use Joomla\CMS\Helper\MediaHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Image\Exception\UnparsableImageException;
@@ -22,9 +21,11 @@ use Joomla\CMS\Image\Image;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\String\PunycodeHelper;
 use Joomla\CMS\Uri\Uri;
+use Joomla\CMS\User\CurrentUserTrait;
 use Joomla\Component\Media\Administrator\Adapter\AdapterInterface;
 use Joomla\Component\Media\Administrator\Exception\FileNotFoundException;
 use Joomla\Component\Media\Administrator\Exception\InvalidPathException;
+use Joomla\Filesystem\Path;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
@@ -37,6 +38,8 @@ use Joomla\Component\Media\Administrator\Exception\InvalidPathException;
  */
 class LocalAdapter implements AdapterInterface
 {
+    use CurrentUserTrait;
+
     /**
      * The root path to gather file information from.
      *
@@ -251,7 +254,7 @@ class LocalAdapter implements AdapterInterface
      */
     public function createFile(string $name, string $path, $data): string
     {
-        $name      =      $this->getSafeName($name);
+        $name      = $this->getSafeName($name);
         $localPath = $this->getLocalPath($path . '/' . $name);
 
         $this->checkContent($localPath, $data);
@@ -288,7 +291,7 @@ class LocalAdapter implements AdapterInterface
     {
         $localPath = $this->getLocalPath($path . '/' . $name);
 
-        if (!File::exists($localPath)) {
+        if (!is_file($localPath)) {
             throw new FileNotFoundException();
         }
 
@@ -320,21 +323,17 @@ class LocalAdapter implements AdapterInterface
      */
     public function delete(string $path)
     {
-        $localPath      =  $this->getLocalPath($path);
+        $localPath      = $this->getLocalPath($path);
         $thumbnailPaths = $this->getLocalThumbnailPaths($localPath);
 
         if (is_file($localPath)) {
-            if (!File::exists($localPath)) {
-                throw new FileNotFoundException();
-            }
-
             if ($this->thumbnails && !empty($thumbnailPaths['fs']) && is_file($thumbnailPaths['fs'])) {
                 File::delete($thumbnailPaths['fs']);
             }
 
             $success = File::delete($localPath);
         } else {
-            if (!Folder::exists($localPath)) {
+            if (!is_dir(Path::clean($localPath))) {
                 throw new FileNotFoundException();
             }
 
@@ -346,7 +345,7 @@ class LocalAdapter implements AdapterInterface
         }
 
         if (!$success) {
-            throw new \Exception('Delete not possible!');
+            throw new \Exception(Text::_('COM_MEDIA_DELETE_NOT_POSSIBLE'));
         }
     }
 
@@ -389,7 +388,7 @@ class LocalAdapter implements AdapterInterface
         $obj->path      = str_replace($this->rootPath, '', $path);
         $obj->extension = !$isDir ? File::getExt($obj->name) : '';
         $obj->size      = !$isDir ? filesize($path) : '';
-        $obj->mime_type = MediaHelper::getMimeType($path, MediaHelper::isImage($obj->name));
+        $obj->mime_type = !$isDir ? (string) MediaHelper::getMimeType($path, MediaHelper::isImage($obj->name)) : '';
         $obj->width     = 0;
         $obj->height    = 0;
 
@@ -404,7 +403,7 @@ class LocalAdapter implements AdapterInterface
             return $obj;
         }
 
-        if (MediaHelper::isImage($obj->name)) {
+        if (!$isDir && MediaHelper::isImage($obj->name)) {
             // Get the image properties
             try {
                 $props       = Image::getImageFileProperties($path);
@@ -434,7 +433,7 @@ class LocalAdapter implements AdapterInterface
         $dateObj = Factory::getDate($date);
 
         $timezone = Factory::getApplication()->get('offset');
-        $user     = Factory::getUser();
+        $user     = $this->getCurrentUser();
 
         if ($user->id) {
             $userTimezone = $user->getParam('timezone');
@@ -514,15 +513,15 @@ class LocalAdapter implements AdapterInterface
     {
         if (is_dir($destinationPath)) {
             // If the destination is a folder we create a file with the same name as the source
-            $destinationPath = $destinationPath . '/' . $this->getFileName($sourcePath);
+            $destinationPath .= '/' . $this->getFileName($sourcePath);
         }
 
         if (file_exists($destinationPath) && !$force) {
-            throw new \Exception('Copy file is not possible as destination file already exists');
+            throw new \Exception(Text::_('COM_MEDIA_COPY_FILE_NOT_POSSIBLE_FILE_ALREADY_EXISTS'));
         }
 
         if (!File::copy($sourcePath, $destinationPath)) {
-            throw new \Exception('Copy file is not possible');
+            throw new \Exception(Text::_('COM_MEDIA_COPY_FILE_NOT_POSSIBLE'));
         }
     }
 
@@ -541,15 +540,15 @@ class LocalAdapter implements AdapterInterface
     private function copyFolder(string $sourcePath, string $destinationPath, bool $force = false)
     {
         if (file_exists($destinationPath) && !$force) {
-            throw new \Exception('Copy folder is not possible as destination folder already exists');
+            throw new \Exception(Text::_('COM_MEDIA_COPY_FOLDER_ALREADY_EXISTS'));
         }
 
         if (is_file($destinationPath) && !File::delete($destinationPath)) {
-            throw new \Exception('Copy folder is not possible as destination folder is a file and can not be deleted');
+            throw new \Exception(Text::_('COM_MEDIA_COPY_FOLDER_DESTINATION_CAN_NOT_DELETE'));
         }
 
         if (!Folder::copy($sourcePath, $destinationPath, '', $force)) {
-            throw new \Exception('Copy folder is not possible');
+            throw new \Exception(Text::_('COM_MEDIA_COPY_FOLDER_NOT_POSSIBLE'));
         }
     }
 
@@ -619,19 +618,19 @@ class LocalAdapter implements AdapterInterface
     {
         if (is_dir($destinationPath)) {
             // If the destination is a folder we create a file with the same name as the source
-            $destinationPath = $destinationPath . '/' . $this->getFileName($sourcePath);
+            $destinationPath .= '/' . $this->getFileName($sourcePath);
         }
 
         if (!MediaHelper::checkFileExtension(pathinfo($destinationPath, PATHINFO_EXTENSION))) {
-            throw new \Exception('Move file is not possible as the extension is invalid');
+            throw new \Exception(Text::_('COM_MEDIA_MOVE_FILE_EXTENSION_INVALID'));
         }
 
         if (file_exists($destinationPath) && !$force) {
-            throw new \Exception('Move file is not possible as destination file already exists');
+            throw new \Exception(Text::_('COM_MEDIA_MOVE_FILE_ALREADY_EXISTS'));
         }
 
         if (!File::move($sourcePath, $destinationPath)) {
-            throw new \Exception('Move file is not possible');
+            throw new \Exception(Text::_('COM_MEDIA_MOVE_FILE_NOT_POSSIBLE'));
         }
     }
 
@@ -650,18 +649,18 @@ class LocalAdapter implements AdapterInterface
     private function moveFolder(string $sourcePath, string $destinationPath, bool $force = false)
     {
         if (file_exists($destinationPath) && !$force) {
-            throw new \Exception('Move folder is not possible as destination folder already exists');
+            throw new \Exception(Text::_('COM_MEDIA_MOVE_FOLDER_ALREADY_EXISTS'));
         }
 
         if (is_file($destinationPath) && !File::delete($destinationPath)) {
-            throw new \Exception('Move folder is not possible as destination folder is a file and can not be deleted');
+            throw new \Exception(Text::_('COM_MEDIA_MOVE_FOLDER_NOT_POSSIBLE'));
         }
 
         if (is_dir($destinationPath)) {
             // We need to bypass exception thrown in JFolder when destination exists
             // So we only copy it in forced condition, then delete the source to simulate a move
             if (!Folder::copy($sourcePath, $destinationPath, '', true)) {
-                throw new \Exception('Move folder to an existing destination failed');
+                throw new \Exception(Text::_('COM_MEDIA_MOVE_FOLDER_EXISTING_DESTINATION_FAILED'));
             }
 
             // Delete the source
@@ -748,7 +747,7 @@ class LocalAdapter implements AdapterInterface
     {
         $files = glob($pattern, $flags);
 
-        foreach (glob(dirname($pattern) . '/*', GLOB_ONLYDIR | GLOB_NOSORT) as $dir) {
+        foreach (glob(\dirname($pattern) . '/*', GLOB_ONLYDIR | GLOB_NOSORT) as $dir) {
             $files = array_merge($files, $this->rglob($dir . '/' . $this->getFileName($pattern), $flags));
         }
 
@@ -822,7 +821,7 @@ class LocalAdapter implements AdapterInterface
         $helper = new MediaHelper();
 
         // @todo find a better way to check the input, by not writing the file to the disk
-        $tmpFile = Path::clean(dirname($localPath) . '/' . uniqid() . '.' . File::getExt($name));
+        $tmpFile = Path::clean(\dirname($localPath) . '/' . uniqid() . '.' . strtolower(File::getExt($name)));
 
         if (!File::write($tmpFile, $mediaContent)) {
             throw new \Exception(Text::_('JLIB_MEDIA_ERROR_UPLOAD_INPUT'), 500);
@@ -927,7 +926,7 @@ class LocalAdapter implements AdapterInterface
             return $this->getUrl($path);
         }
 
-        $dir = dirname($thumbnailPaths['fs']);
+        $dir = \dirname($thumbnailPaths['fs']);
 
         if (!is_dir($dir)) {
             Folder::create($dir);
@@ -953,10 +952,8 @@ class LocalAdapter implements AdapterInterface
      */
     private function createThumbnail(string $path, string $thumbnailPath): bool
     {
-        $image = new Image($path);
-
         try {
-            $image->createThumbnails([$this->thumbnailSize[0] . 'x' . $this->thumbnailSize[1]], $image::SCALE_INSIDE, dirname($thumbnailPath), true);
+            (new Image($path))->createThumbnails([$this->thumbnailSize[0] . 'x' . $this->thumbnailSize[1]], Image::SCALE_INSIDE, \dirname($thumbnailPath), true);
         } catch (\Exception $e) {
             return false;
         }

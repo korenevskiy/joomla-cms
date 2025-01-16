@@ -15,9 +15,8 @@ use Joomla\CMS\Helper\ContentHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
-use Joomla\CMS\Toolbar\Toolbar;
-use Joomla\CMS\Toolbar\ToolbarHelper;
 use Joomla\CMS\Router\Route;
+use Joomla\CMS\Toolbar\ToolbarHelper;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
@@ -47,7 +46,7 @@ class HtmlView extends BaseHtmlView
     /**
      * The model state
      *
-     * @var \Joomla\CMS\Object\CMSObject
+     * @var \Joomla\Registry\Registry
      */
     protected $state;
 
@@ -99,7 +98,12 @@ class HtmlView extends BaseHtmlView
         }
 
         if ($this->state->get('filter.tour_id', -1) < 0) {
-            throw new GenericDataException(implode("\n", $errors), 500);
+            // This arises when you are logged out and return to the steps view after logging back in
+            // We redirect back to the tour lists view
+            $app = Factory::getApplication();
+            $app->enqueueMessage(Text::_('COM_GUIDEDTOURS_STEPS_UNKNOWN_TOUR'), 'notice');
+            $app->redirect(Route::_('index.php?option=com_guidedtours&view=tours', false), 300);
+            return;
         }
 
         // Unset the tour_id field from activeFilters as we don't filter by tour here.
@@ -120,7 +124,7 @@ class HtmlView extends BaseHtmlView
     protected function addToolbar()
     {
         // Get the toolbar object instance
-        $toolbar = Toolbar::getInstance('toolbar');
+        $toolbar = $this->getDocument()->getToolbar();
 
         $canDo = ContentHelper::getActions('com_guidedtours');
         $app   = Factory::getApplication();
@@ -134,7 +138,7 @@ class HtmlView extends BaseHtmlView
         $title = !empty($tour->title) ? $tour->title : '';
 
         ToolbarHelper::title(Text::sprintf('COM_GUIDEDTOURS_STEPS_LIST', Text::_($title)), 'map-signs');
-        $arrow  = Factory::getLanguage()->isRtl() ? 'arrow-right' : 'arrow-left';
+        $arrow  = $this->getLanguage()->isRtl() ? 'arrow-right' : 'arrow-left';
 
         ToolbarHelper::link(
             Route::_('index.php?option=com_guidedtours&view=tours'),
@@ -171,7 +175,7 @@ class HtmlView extends BaseHtmlView
 
         if (!$this->isEmptyState && $this->state->get('filter.published') == -2 && $canDo->get('core.delete')) {
             $toolbar->delete('steps.delete')
-                ->text('JTOOLBAR_EMPTY_TRASH')
+                ->text('JTOOLBAR_DELETE_FROM_TRASH')
                 ->message('JGLOBAL_CONFIRM_DELETE')
                 ->listCheck(true);
         }

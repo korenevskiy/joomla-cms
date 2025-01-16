@@ -18,7 +18,6 @@ use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Toolbar\Button\DropdownButton;
-use Joomla\CMS\Toolbar\Toolbar;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Joomla\Component\Content\Administrator\Extension\ContentComponent;
 use Joomla\Component\Content\Administrator\Helper\ContentHelper;
@@ -51,7 +50,7 @@ class HtmlView extends BaseHtmlView
     /**
      * The model state
      *
-     * @var   \Joomla\CMS\Object\CMSObject
+     * @var   \Joomla\Registry\Registry
      */
     protected $state;
 
@@ -85,6 +84,22 @@ class HtmlView extends BaseHtmlView
     private $isEmptyState = false;
 
     /**
+     * Is the vote plugin enabled on the site
+     *
+     * @var   boolean
+     * @since 4.4.0
+     */
+    protected $vote = false;
+
+    /**
+     * Are hits being recorded on the site?
+     *
+     * @var   boolean
+     * @since 4.4.0
+     */
+    protected $hits = false;
+
+    /**
      * Display the view
      *
      * @param   string  $tpl  The name of the template file to parse; automatically searches through the template paths.
@@ -99,7 +114,7 @@ class HtmlView extends BaseHtmlView
         $this->filterForm    = $this->get('FilterForm');
         $this->activeFilters = $this->get('ActiveFilters');
         $this->vote          = PluginHelper::isEnabled('content', 'vote');
-        $this->hits          = ComponentHelper::getParams('com_content')->get('record_hits', 1);
+        $this->hits          = ComponentHelper::getParams('com_content')->get('record_hits', 1) == 1;
 
         if (!\count($this->items) && $this->isEmptyState = $this->get('IsEmptyState')) {
             $this->setLayout('emptystate');
@@ -155,7 +170,7 @@ class HtmlView extends BaseHtmlView
     {
         $canDo   = ContentHelper::getActions('com_content', 'category', $this->state->get('filter.category_id'));
         $user    = $this->getCurrentUser();
-        $toolbar = Toolbar::getInstance();
+        $toolbar = $this->getDocument()->getToolbar();
 
         ToolbarHelper::title(Text::_('COM_CONTENT_ARTICLES_TITLE'), 'copy article');
 
@@ -174,7 +189,7 @@ class HtmlView extends BaseHtmlView
 
             $childBar = $dropdown->getChildToolbar();
 
-            if (\count($this->transitions)) {
+            if ($canDo->get('core.execute.transition') && \count($this->transitions)) {
                 $childBar->separatorButton('transition-headline')
                     ->text('COM_CONTENT_RUN_TRANSITIONS')
                     ->buttonClass('text-center py-2 h3');
@@ -218,16 +233,19 @@ class HtmlView extends BaseHtmlView
             if (
                 $user->authorise('core.create', 'com_content')
                 && $user->authorise('core.edit', 'com_content')
-                && $user->authorise('core.execute.transition', 'com_content')
             ) {
                 $childBar->popupButton('batch', 'JTOOLBAR_BATCH')
-                    ->selector('collapseModal')
+                    ->popupType('inline')
+                    ->textHeader(Text::_('COM_CONTENT_BATCH_OPTIONS'))
+                    ->url('#joomla-dialog-batch')
+                    ->modalWidth('800px')
+                    ->modalHeight('fit-content')
                     ->listCheck(true);
             }
         }
 
         if (!$this->isEmptyState && $this->state->get('filter.published') == ContentComponent::CONDITION_TRASHED && $canDo->get('core.delete')) {
-            $toolbar->delete('articles.delete', 'JTOOLBAR_EMPTY_TRASH')
+            $toolbar->delete('articles.delete', 'JTOOLBAR_DELETE_FROM_TRASH')
                 ->message('JGLOBAL_CONFIRM_DELETE')
                 ->listCheck(true);
         }

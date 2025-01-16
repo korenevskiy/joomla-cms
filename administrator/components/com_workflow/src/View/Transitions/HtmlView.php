@@ -10,14 +10,12 @@
 
 namespace Joomla\Component\Workflow\Administrator\View\Transitions;
 
-use Joomla\CMS\Factory;
 use Joomla\CMS\Helper\ContentHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Toolbar\Button\DropdownButton;
-use Joomla\CMS\Toolbar\Toolbar;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 
 // phpcs:disable PSR1.Files.SideEffects
@@ -132,7 +130,7 @@ class HtmlView extends BaseHtmlView
         $this->workflow         = $this->get('Workflow');
 
         // Check for errors.
-        if (count($errors = $this->get('Errors'))) {
+        if (\count($errors = $this->get('Errors'))) {
             throw new GenericDataException(implode("\n", $errors), 500);
         }
 
@@ -162,11 +160,11 @@ class HtmlView extends BaseHtmlView
     {
         $canDo   = ContentHelper::getActions($this->extension, 'workflow', $this->workflowID);
         $user    = $this->getCurrentUser();
-        $toolbar = Toolbar::getInstance();
+        $toolbar = $this->getDocument()->getToolbar();
 
         ToolbarHelper::title(Text::sprintf('COM_WORKFLOW_TRANSITIONS_LIST', Text::_($this->state->get('active_workflow'))), 'address contact');
 
-        $arrow  = Factory::getLanguage()->isRtl() ? 'arrow-right' : 'arrow-left';
+        $arrow  = $this->getLanguage()->isRtl() ? 'arrow-right' : 'arrow-left';
 
         $toolbar->link(
             'JTOOLBAR_BACK',
@@ -201,7 +199,7 @@ class HtmlView extends BaseHtmlView
         }
 
         if ($this->state->get('filter.published') === '-2' && $canDo->get('core.delete')) {
-            $toolbar->delete('transitions.delete', 'JTOOLBAR_EMPTY_TRASH')
+            $toolbar->delete('transitions.delete', 'JTOOLBAR_DELETE_FROM_TRASH')
                 ->message('JGLOBAL_CONFIRM_DELETE')
                 ->listCheck(true);
         }

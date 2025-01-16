@@ -10,9 +10,9 @@
 namespace Joomla\CMS\Cache\Storage;
 
 use Joomla\CMS\Cache\CacheStorage;
-use Joomla\CMS\Filesystem\File;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
+use Joomla\Filesystem\File;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
@@ -260,9 +260,9 @@ class FileStorage extends CacheStorage
             case 'notgroup':
                 $folders = $this->_folders($this->_root);
 
-                for ($i = 0, $n = \count($folders); $i < $n; $i++) {
-                    if ($folders[$i] != $folder) {
-                        $return |= $this->_deleteFolder($this->_root . '/' . $folders[$i]);
+                foreach ($folders as $value) {
+                    if ($value != $folder) {
+                        $return |= $this->_deleteFolder($this->_root . '/' . $value);
                     }
                 }
 
