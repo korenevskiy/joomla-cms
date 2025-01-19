@@ -137,7 +137,7 @@ class CheckboxField extends FormField
     protected function getLayoutData()
     {
         $data            = parent::getLayoutData();
-        // Allow using any none empty string like '0' as default value for checkbox
+        // Allow any non-empty string, such as '0,' to be used as the default value for a checkbox
         $data['value']   = $this->default !== null && $this->default !== '' ? $this->default : '1';
         $data['checked'] = $this->checked || $this->value;
 
