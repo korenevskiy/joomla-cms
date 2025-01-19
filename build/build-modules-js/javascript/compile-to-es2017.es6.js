@@ -8,7 +8,7 @@ const { nodeResolve } = require('@rollup/plugin-node-resolve');
 const replace = require('@rollup/plugin-replace');
 const { babel } = require('@rollup/plugin-babel');
 const LightningCSS = require('lightningcss');
-const { renderSync } = require('sass-embedded');
+const { compile } = require('sass-embedded');
 const { minifyJsCode } = require('./minify.es6.js');
 const { getPackagesUnderScope } = require('../init/common/resolve-package.es6.js');
 
@@ -33,7 +33,7 @@ const getWcMinifiedCss = async (file) => {
   if (scssFileExists) {
     let compiled;
     try {
-      compiled = renderSync({ file: scssFile });
+      compiled = compile(scssFile);
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error(`${error.column}

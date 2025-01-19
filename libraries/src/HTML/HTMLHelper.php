@@ -785,7 +785,7 @@ abstract class HTMLHelper
 
         foreach ($includes as $include) {
             // If there is already a version hash in the script reference (by using deprecated MD5SUM).
-            if ($pos = strpos($include, '?') !== false) {
+            if (($pos = strpos($include, '?')) !== false) {
                 $options['version'] = substr($include, $pos + 1);
             }
 
@@ -832,7 +832,7 @@ abstract class HTMLHelper
 
         foreach ($includes as $include) {
             // If there is already a version hash in the script reference (by using deprecated MD5SUM).
-            if ($pos = strpos($include, '?') !== false) {
+            if (($pos = strpos($include, '?')) !== false) {
                 $options['version'] = substr($include, $pos + 1);
             }
 
